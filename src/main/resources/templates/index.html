@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS & Inventory Management System</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+    <div class="container header-container">
+        <h1>POS & Inventory Dashboard</h1>
+        <div class="header-actions">
+            <button id="view-inventory-btn" class="active-view">Inventory</button>
+            <button id="view-pos-btn">Point of Sale</button>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- ==================================== -->
+    <!-- VIEW 1: INVENTORY MANAGEMENT -->
+    <!-- ==================================== -->
+    <section id="inventory-view" class="view-section active">
+        <h2>Product List & Management</h2>
+
+        <div class="inventory-controls">
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Search by ID, Name, or Type...">
+                <button id="search-btn" class="btn-search">Search</button>
+                <button id="refresh-btn" class="btn-secondary">Refresh</button>
+            </div>
+            <div class="add-buttons">
+                <button id="show-add-standard-form-btn" class="btn-primary">Add Standard</button>
+                <button id="show-add-perishable-form-btn" class="btn-success">Add Perishable</button>
+            </div>
+        </div>
+
+        <div id="product-list-container" class="data-table-container">
+            <!-- Product table will be inserted here by JavaScript -->
+        </div>
+    </section>
+
+    <!-- ==================================== -->
+    <!-- VIEW 2: POINT OF SALE (POS) -->
+    <!-- ==================================== -->
+    <section id="pos-view" class="view-section">
+        <h2>Point of Sale Transaction</h2>
+
+        <div class="pos-layout">
+            <div class="pos-input-panel card">
+                <h3>Add Item to Cart</h3>
+                <form id="add-to-cart-form">
+                    <label for="pos-product-id">Product ID:</label>
+                    <input type="text" id="pos-product-id" required>
+
+                    <label for="pos-quantity">Quantity:</label>
+                    <input type="number" id="pos-quantity" value="1" min="1" required>
+
+                    <button type="submit" class="btn-add-to-cart">Add to Cart</button>
+                </form>
+            </div>
+
+            <div class="pos-cart-panel card">
+                <h3>Current Sale</h3>
+                <ul id="cart-list">
+                    <!-- Cart items will be displayed here -->
+                    <li><span class="placeholder-text">Cart is empty.</span></li>
+                </ul>
+                <div class="cart-total">
+                    <strong>Total:</strong> <span id="cart-total-amount">$0.00</span>
+                </div>
+
+                <div class="checkout-panel">
+                    <form id="checkout-form">
+                        <h4>Payment Details</h4>
+                        <label for="payment-method">Method:</label>
+                        <select id="payment-method" required>
+                            <option value="CASH">CASH</option>
+                            <option value="CARD">CARD</option>
+                            <option value="MOBILE">MOBILE</option>
+                        </select>
+
+                        <label for="amount-paid">Amount Paid:</label>
+                        <input type="number" id="amount-paid" step="0.01" min="0" value="0.00" required>
+
+                        <button type="submit" class="btn-checkout">Finalize Sale</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================================== -->
+    <!-- MODALS (Hidden by Default) -->
+    <!-- ==================================== -->
+    <div id="modal-container" class="modal-container">
+        <!-- Modal Content (Forms, Messages) will be inserted here -->
+    </div>
+
+</main>
+
+<script th:src="@{/script.js}"></script>
+</body>
+</html>
