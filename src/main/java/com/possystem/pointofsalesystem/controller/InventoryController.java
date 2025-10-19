@@ -6,11 +6,12 @@ import com.possystem.pointofsalesystem.service.Inventory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller; // FIX 1: Changed from @RestController to @Controller
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@Controller // The class must be @Controller to return redirects (like for perishable product)
 @RequestMapping("/products")
 public class InventoryController {
 
@@ -21,7 +22,9 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
+    // This method returns JSON, so it needs @ResponseBody
     @GetMapping
+    @ResponseBody
     public List<Product> getAllProducts(@RequestParam(required = false) String search) {
         if (search != null && !search.trim().isEmpty()) {
             return inventoryService.searchProducts(search);
@@ -29,19 +32,27 @@ public class InventoryController {
         return inventoryService.getAllProducts();
     }
 
+    // Standard Product (AJAX/JSON submission)
     @PostMapping("/add")
+    @ResponseBody // FIX 2: Ensures this AJAX method returns JSON body
     public ResponseEntity<String> addProduct(@RequestBody Product product) {
         inventoryService.addProduct(product);
         return ResponseEntity.ok("Standard product added successfully.");
     }
 
     @PostMapping("/add-perishable")
-    public ResponseEntity<String> addPerishableProduct(@RequestBody PerishableProduct perishableProduct) {
+    @ResponseBody
+    public PerishableProduct addPerishableProduct(@RequestBody PerishableProduct perishableProduct) {
+
         inventoryService.addProduct(perishableProduct);
-        return ResponseEntity.ok("Perishable product added successfully.");
+
+
+        return perishableProduct;
     }
 
+    // This method returns JSON, so it needs @ResponseBody
     @PutMapping("/{id}")
+    @ResponseBody
     public ResponseEntity<String> updateProduct(@PathVariable String id, @RequestBody Product productDetails) {
         boolean updated = inventoryService.updateProduct(id, productDetails);
         if (updated) {
@@ -50,7 +61,9 @@ public class InventoryController {
         return ResponseEntity.notFound().build();
     }
 
+    // This method returns JSON, so it needs @ResponseBody
     @DeleteMapping("/{id}")
+    @ResponseBody
     public ResponseEntity<String> deleteProduct(@PathVariable String id) {
         boolean deleted = inventoryService.deleteProduct(id);
         if (deleted) {

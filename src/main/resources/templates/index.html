@@ -98,7 +98,41 @@
     <!-- MODALS (Hidden by Default) -->
     <!-- ==================================== -->
     <div id="modal-container" class="modal-container">
-        <!-- Modal Content (Forms, Messages) will be inserted here -->
+
+        <div id="add-standard-modal" class="modal-content">
+            <h3>Add New Standard Product</h3>
+            <form id="add-standard-form">
+                <label for="standard-name">Name:</label>
+                <input type="text" id="standard-name" name="name" required>
+
+                <label for="standard-price">Price ($):</label>
+                <input type="number" id="standard-price" name="price" step="0.01" required>
+
+                <button type="submit" class="btn-submit">Add Product</button>
+            </form>
+        </div>
+
+        <div id="add-perishable-modal" class="modal-content">
+            <h3>Add New Perishable Product</h3>
+
+            <form id="add-perishable-form" method="POST" th:action="@{/products/add-perishable}">
+
+                <label for="perishable-name">Name:</label>
+                <input type="text" id="perishable-name" name="name" required>
+
+                <label for="perishable-price">Price ($):</label>
+                <input type="number" id="perishable-price" name="price" step="0.01" required>
+
+                <label for="perishable-quantity">Quantity:</label>
+                <input type="number" id="perishable-quantity" name="quantity" min="1" value="1" required>
+
+                <label for="expiryDate">Expiry Date:</label>
+                <input type="date" id="expiryDate" name="expiryDate" required>
+
+                <button type="submit" class="btn-submit">Add Product</button>
+            </form>
+        </div>
+
     </div>
 
 </main>

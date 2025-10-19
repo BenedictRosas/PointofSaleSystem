@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class InventoryServiceImpl implements Inventory {
@@ -25,46 +24,81 @@ public class InventoryServiceImpl implements Inventory {
         return productRepository.findAll();
     }
 
+    // FIX: Convert String ID from controller to Long ID for repository
     @Override
-    public Optional<Product> getProductById(String id) {
-        return productRepository.findById(id);
+    public Optional<Product> getProductById(String idString) {
+        try {
+            Long id = Long.parseLong(idString);
+            return productRepository.findById(id);
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
     public void addProduct(Product product) {
-        if (product.getId() == null || product.getId().isEmpty()) {
-            product.setId(UUID.randomUUID().toString());
+        // FIX: Set ID to null for MySQL AUTO_INCREMENT
+        product.setId(null);
+
+        // FIX: Handle default values required by the NOT NULL database columns
+        if (product instanceof PerishableProduct) {
+            // Perishable product logic
+            product.setIsPerishable(true);
+            if (product.getQuantity() == null) {
+                product.setQuantity(1); // Default to 1 for a new perishable item
+            }
+        } else {
+            // Standard product logic
+            product.setIsPerishable(false);
+            if (product.getQuantity() == null) {
+                product.setQuantity(0); // Default to 0 for a new standard item
+            }
         }
+
         productRepository.save(product);
     }
 
+    // FIX: Convert String ID to Long ID for update
     @Override
-    public boolean updateProduct(String id, Product productDetails) {
-        Optional<Product> existingProductOpt = productRepository.findById(id);
+    public boolean updateProduct(String idString, Product productDetails) {
+        try {
+            Long id = Long.parseLong(idString);
+            Optional<Product> existingProductOpt = productRepository.findById(id);
 
-        if (existingProductOpt.isPresent()) {
-            Product existingProduct = existingProductOpt.get();
+            if (existingProductOpt.isPresent()) {
+                Product existingProduct = existingProductOpt.get();
 
-            existingProduct.setName(productDetails.getName());
-            existingProduct.setPrice(productDetails.getPrice());
+                existingProduct.setName(productDetails.getName());
+                existingProduct.setPrice(productDetails.getPrice());
 
-            if (existingProduct instanceof PerishableProduct && productDetails instanceof PerishableProduct) {
-                ((PerishableProduct) existingProduct).setExpiryDate(((PerishableProduct) productDetails).getExpiryDate());
+                // Note: Price type is now BigDecimal, ensure your controller handles this.
+
+                if (existingProduct instanceof PerishableProduct && productDetails instanceof PerishableProduct) {
+                    ((PerishableProduct) existingProduct).setExpiryDate(((PerishableProduct) productDetails).getExpiryDate());
+                }
+
+                productRepository.save(existingProduct);
+                return true;
             }
-
-            productRepository.save(existingProduct);
-            return true;
+            return false;
+        } catch (NumberFormatException e) {
+            return false;
         }
-        return false;
     }
 
+    // FIX: Convert String ID to Long ID for delete
     @Override
-    public boolean deleteProduct(String id) {
-        if (productRepository.existsById(id)) {
-            productRepository.deleteById(id);
-            return true;
+    public boolean deleteProduct(String idString) {
+        try {
+            Long id = Long.parseLong(idString);
+            if (productRepository.existsById(id)) {
+                productRepository.deleteById(id);
+                return true;
+            }
+            return false;
+        } catch (NumberFormatException e) {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -75,10 +109,17 @@ public class InventoryServiceImpl implements Inventory {
 
         List<Product> results = productRepository.findByNameContainingIgnoreCase(searchTerm);
 
-        Optional<Product> resultById = productRepository.findById(searchTerm);
-        if (resultById.isPresent() && !results.contains(resultById.get())) {
-            results.add(0, resultById.get());
+        try {
+            // Check if search term is a numeric ID and use findById(Long) if so
+            Long id = Long.parseLong(searchTerm);
+            Optional<Product> resultById = productRepository.findById(id);
+            if (resultById.isPresent() && !results.contains(resultById.get())) {
+                results.add(0, resultById.get());
+            }
+        } catch (NumberFormatException e) {
+            // Ignore if search term is not a numeric ID
         }
+
         return results;
     }
 }

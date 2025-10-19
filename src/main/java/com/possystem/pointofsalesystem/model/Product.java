@@ -1,35 +1,53 @@
 package com.possystem.pointofsalesystem.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+
+
 
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-public class Product implements Manageable {
+@Table(name = "products")
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Product {
 
+    // FIX 1: ID is Long and configured for MySQL AUTO_INCREMENT
     @Id
-    private String id;
+    @jakarta.persistence.GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String name;
-    private double price;
+    private BigDecimal price; // Using BigDecimal for price
+
+    // FIX 2: Added fields required by your database and service layer
+    private Integer quantity;
+    private Boolean isPerishable;
 
     public Product() {}
 
-    public Product(String id, String name, double price) {
-        this.id = id;
-        this.name = name;
-        this.price = price;
-    }
+    // --- Getters and Setters (All corrected to match field types) ---
 
-    // --- Getters and Setters ---
-    @Override
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    @Override
+    // ID (Now Long)
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    // Name
     public String getName() { return name; }
-    @Override
     public void setName(String name) { this.name = name; }
-    public double getPrice() { return price; }
-    public void setPrice(double price) { this.price = price; }
+
+    // Price
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+
+    // Quantity (FIXED the missing method issue)
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
+    // isPerishable (FIXED the missing method issue)
+    public Boolean getIsPerishable() { return isPerishable; }
+    public void setIsPerishable(Boolean isPerishable) { this.isPerishable = isPerishable; }
 }

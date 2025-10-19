@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/pos")
+@RequestMapping("/Point_Of_Sale")
 public class POSController {
 
     private final TransactionService transactionService;
@@ -18,7 +18,7 @@ public class POSController {
         this.transactionService = transactionService;
     }
 
-    @GetMapping("/index")
+    @GetMapping("/Home")
     public String serveIndex() {
         return "index";
     }

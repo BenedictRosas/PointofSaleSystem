@@ -116,7 +116,7 @@ function renderProductTable(products) {
                     <th>ID</th>
                     <th>Name</th>
                     <th>Price</th>
-                    <th>Details</th>
+                    <th>Quantity</th> <th>Details</th>
                     <th>Type</th>
                     <th>Actions</th>
                 </tr>
@@ -137,11 +137,17 @@ function renderProductTable(products) {
                 <td>${product.id.substring(0, 8)}...</td>
                 <td>${product.name}</td>
                 <td>$${product.price.toFixed(2)}</td>
-                <td>${details}</td>
+                <td>${product.quantity}</td> <td>${details}</td>
                 <td>${type}</td>
                 <td>
                     <button class="btn-danger btn-delete" data-id="${product.id}">Delete</button>
-                    <button class="btn-secondary btn-update" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}" data-expiry="${product.expiryDate || ''}" data-type="${type}">Update</button>
+                    <button class="btn-secondary btn-update" 
+                        data-id="${product.id}" 
+                        data-name="${product.name}" 
+                        data-price="${product.price}" 
+                        data-quantity="${product.quantity}" 
+                        data-expiry="${product.expiryDate || ''}" 
+                        data-type="${type}">Update</button>
                 </td>
             </tr>
         `;
@@ -194,13 +200,21 @@ async function handleAddProduct(e) {
     const form = e.target;
     const isPerishable = form.id === 'add-perishable-form';
 
+    // --- CRITICAL FIX: GATHER ALL FIELDS FROM THE PARENT PRODUCT CLASS ---
     const productData = {
+        // Name and Price must be included for the parent Product class
         name: form.elements.name.value,
         price: parseFloat(form.elements.price.value),
+
+        // FIX: The quantity field is likely NOT NULL in your database,
+        // so it must be sent, even if it's 0 (meaning no stock yet).
+        quantity: 0,
     };
 
     let endpoint = `${INVENTORY_API}/add`;
+
     if (isPerishable) {
+        // Add the field unique to the PerishableProduct subclass
         productData.expiryDate = form.elements.expiryDate.value;
         endpoint = `${INVENTORY_API}/add-perishable`;
     }
@@ -208,17 +222,24 @@ async function handleAddProduct(e) {
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(productData)
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(productData) // Now sends name, price, and quantity
         });
 
+        // The rest of your success/error handling remains the same:
         const message = response.ok ? 'Product added successfully!' : await response.text();
         if (response.ok) {
             showModalMessage(message, 'success');
             form.reset();
             fetchProducts();
         } else {
-            showModalMessage(`Failed to add product: ${message}`, 'error');
+            // Check if the response body is JSON for a cleaner error message
+            try {
+                const errorBody = JSON.parse(message);
+                showModalMessage(`Failed to add product: ${errorBody.error || message}`, 'error');
+            } catch {
+                showModalMessage(`Failed to add product: ${message}`, 'error');
+            }
         }
 
     } catch (error) {
@@ -239,10 +260,15 @@ async function handleUpdateProduct(e) {
     // Check if the expiryDate element exists in the form
     const isPerishable = form.elements.expiryDate !== undefined;
 
+    // --- CRITICAL FIX: INCLUDE QUANTITY IN UPDATE PAYLOAD ---
     const productData = {
         // ID is not sent in the body, but used in the path
         name: form.elements.name.value,
         price: parseFloat(form.elements.price.value),
+
+        // FIX: Must include the quantity, which is required by the parent Product entity.
+        // It is pulled from the hidden input field added in openModal.
+        quantity: parseInt(form.elements.quantity.value),
     };
 
     if (isPerishable) {
@@ -284,6 +310,7 @@ function openModal(type, data = {}) {
     let formId = '';
     let extraFields = '';
     let submitHandler = '';
+    let quantityField = ''; // New variable for quantity input
 
     // Clear any previous edit ID
     editProductId = null;
@@ -292,6 +319,11 @@ function openModal(type, data = {}) {
         title = 'Add New Standard Product';
         formId = 'add-standard-form';
         submitHandler = 'handleAddProduct(event)';
+        // Standard products should probably allow quantity input
+        quantityField = `
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" min="0" required value="0">
+        `;
     } else if (type === 'perishable') {
         title = 'Add New Perishable Product';
         formId = 'add-perishable-form';
@@ -299,17 +331,27 @@ function openModal(type, data = {}) {
             <label for="expiryDate">Expiry Date:</label>
             <input type="date" id="expiryDate" name="expiryDate" required value="${data.expiryDate || ''}">
         `;
+        // Perishable product stock starts at 0 during creation
+        quantityField = `
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" min="0" required value="0">
+        `;
         submitHandler = 'handleAddProduct(event)';
     } else if (type === 'update') {
         title = `Update Product: ${data.name}`;
         formId = 'update-product-form';
         editProductId = data.id; // Set ID for update handler
 
+        // FIXED: Quantity input for updating stock
+        quantityField = `
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" min="0" required value="${data.quantity || 0}">
+        `;
+
         // Determine if product being updated is perishable based on the data-type attribute
         if (data.type === 'Perishable') {
             extraFields = `
                 <label for="expiryDate">Expiry Date:</label>
-                <!-- Use the stored data-expiry value which is already a YYYY-MM-DD string or empty -->
                 <input type="date" id="expiryDate" name="expiryDate" required value="${data.expiry || ''}">
             `;
         }
@@ -324,14 +366,12 @@ function openModal(type, data = {}) {
             <h3>${title}</h3>
             <form id="${formId}" onsubmit="${submitHandler}">
                 <label for="name">Name:</label>
-                <!-- Use the stored data.name value -->
                 <input type="text" id="name" name="name" required value="${data.name || ''}">
 
                 <label for="price">Price ($):</label>
-                <!-- Use the stored data.price value, which should be a number or converted to string -->
                 <input type="number" id="price" name="price" step="0.01" min="0" required value="${data.price || ''}">
                 
-                ${extraFields}
+                ${quantityField} ${extraFields}
 
                 <button type="submit" class="btn-primary">${type === 'update' ? 'Save Changes' : 'Add Product'}</button>
             </form>
@@ -479,7 +519,7 @@ async function handleCheckout(e) {
         totalAmount: currentTotal,
         payment: paymentInfo
     };
-
+// ... sent to /pos/checkout
 
     try {
         const response = await fetch(`${POS_API}/checkout`, {
@@ -553,6 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: target.dataset.id,
                 name: target.dataset.name,
                 price: parseFloat(target.dataset.price),
+                quantity: parseInt(target.dataset.quantity), // FIXED: Quantity is now passed
                 expiry: target.dataset.expiry, // Note: using data-expiry here
                 type: target.dataset.type
             });
