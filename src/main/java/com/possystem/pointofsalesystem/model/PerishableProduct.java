@@ -1,4 +1,4 @@
-package com.possystem.pointofsalesystem.model;
+ package com.possystem.pointofsalesystem.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -6,19 +6,26 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.persistence.*;
+// ... other imports
+
 @Entity
+@DiscriminatorValue("1") // <-- THIS IS REQUIRED (is_perishable = 1)
 @Table(name = "perishable_products")
-@PrimaryKeyJoinColumn(name = "product_id")
+@PrimaryKeyJoinColumn(name = "product_id") // Correctly joins the PK
 public class PerishableProduct extends Product {
 
-    @JsonFormat(pattern = "yyyy-MM-dd") // Use this for incoming JSON
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate expiryDate;
 
-    // ...
+    // ... rest of the code
+
     // Default no-arg constructor is necessary for JPA
     public PerishableProduct() {
         super();
-        this.setIsPerishable(true);
+        // REMOVE: this.setIsPerishable(true);
     }
 
     // Optional constructor for setting fields without the ID
@@ -28,7 +35,7 @@ public class PerishableProduct extends Product {
         this.setPrice(price);
         this.setQuantity(quantity);
         this.expiryDate = expiryDate;
-        this.setIsPerishable(true);
+        // REMOVE: this.setIsPerishable(true);
     }
 
     // --- Getters and Setters for Expiry Date ---

@@ -1,4 +1,4 @@
-package com.possystem.pointofsalesystem.service;
+ package com.possystem.pointofsalesystem.service;
 
 import com.possystem.pointofsalesystem.model.Product;
 import com.possystem.pointofsalesystem.model.PerishableProduct;
@@ -23,7 +23,6 @@ public class InventoryServiceImpl implements Inventory {
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
-
     // FIX: Convert String ID from controller to Long ID for repository
     @Override
     public Optional<Product> getProductById(String idString) {
@@ -37,26 +36,17 @@ public class InventoryServiceImpl implements Inventory {
 
     @Override
     public void addProduct(Product product) {
-        // FIX: Set ID to null for MySQL AUTO_INCREMENT
-        product.setId(null);
-
-        // FIX: Handle default values required by the NOT NULL database columns
-        if (product instanceof PerishableProduct) {
-            // Perishable product logic
-            product.setIsPerishable(true);
-            if (product.getQuantity() == null) {
-                product.setQuantity(1); // Default to 1 for a new perishable item
-            }
-        } else {
-            // Standard product logic
-            product.setIsPerishable(false);
-            if (product.getQuantity() == null) {
-                product.setQuantity(0); // Default to 0 for a new standard item
-            }
-        }
-
+        // 1. ***CRITICAL FIX: Manual ID Generation***
+        Long maxId = productRepository.findMaxProductId().orElse(0L);
+        product.setId(maxId + 1); // Set the new ID to the max existing ID + 1
+        // ... rest of the logic ...
         productRepository.save(product);
     }
+
+
+    // 3. Save: Hibernate will handle the split save (products and perishable_products)
+    // and set the is_perishable column based on the object's class type.
+
 
     // FIX: Convert String ID to Long ID for update
     @Override

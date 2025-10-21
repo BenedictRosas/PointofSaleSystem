@@ -1,4 +1,4 @@
-package com.possystem.pointofsalesystem.controller;
+ package com.possystem.pointofsalesystem.controller;
 
 import com.possystem.pointofsalesystem.model.Sale;
 import com.possystem.pointofsalesystem.model.PaymentInfo;
